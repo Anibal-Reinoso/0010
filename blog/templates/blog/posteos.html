@@ -1,0 +1,35 @@
+{% extends 'blog/base_layout.html' %}
+
+{% block content %}
+<div>
+    <h1>Listado de Posteos</h1>
+    {% comment %}
+    <div>
+        {{context}}
+    </div>
+    <br>
+    <div>
+        {{context.posteos}} <!--context['posteos']-->
+    </div>
+    <br>
+    <div>
+        {{context.posteos.2}} <!--context['posteos'][2]-->
+    </div>
+    <br>
+    <div>
+        {{context.posteos.2.title}} <!--context['posteos'][2].title-->
+    </div>
+    {% endcomment %}
+    <br>
+    <div>
+        {% for post in context.posteos %}
+            <ul>
+                <li>
+                    {{post.title}}
+                </li>
+            </ul>
+        {% endfor %}
+    </div>
+</div>
+    
+{% endblock  %}
