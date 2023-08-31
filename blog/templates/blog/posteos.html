@@ -27,7 +27,7 @@
     </div>
     <br>
     <div>
-        {% for post in context.posteos %}
+        {% for post in context %}
             <ul>
                 <li>
                     <p><a href="{% url 'modificar_posteo' post.id %}">{{post.title}}</a></p>
