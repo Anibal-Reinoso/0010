@@ -1,12 +1,25 @@
+import psycopg2
+from datetime import datetime
 from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.urls import reverse_lazy
 from django.http import HttpResponse
+# from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Post
 from .forms import PostForm
 from django.contrib import messages
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 # Create your views here.
+
+CONNECTION = psycopg2.connect(
+    user='postgres',
+    password='admin',
+    host='localhost',
+    port=5432,
+    database='blog',
+)
 
 def index(request):
     return HttpResponse('<div><h1>Nuestra primera aplicación!</h1></div>')
@@ -68,18 +81,57 @@ def index(request):
     
 #     return render(request, 'blog/modificar_posteo.html', {"form": form})
 
-def eliminar_posteo(request, id):
-    """
-    Funcion para eliminar posteos por id
-    """
-    post = Post.objects.get(pk=id)
+# def eliminar_posteo(request, id):
+#     """
+#     Funcion para eliminar posteos por id
+#     """
+#     post = Post.objects.get(pk=id)
+#     if request.method == 'POST':
+#         post.delete()
+#         messages.success(request, 'Se elimino exitosamente!')
+#         return redirect('posteos')
+
+
+def crear_posteo(request):
+    form = PostForm()
     if request.method == 'POST':
-        post.delete()
-        messages.success(request, 'Se elimino exitosamente!')
-        return redirect('posteos')
+        form = PostForm(request.POST)
+        if form.is_valid():
+            title = form.cleaned_data['title']
+            content = form.cleaned_data['content']
+            author = form.cleaned_data['author']
+            tzone = form.cleaned_data['tzone']
+            created_at = datetime.now()
+
+            try:
+                cursor = CONNECTION.cursor()
+
+                # Insertamos los datos en la base de datos
+                sSQL="INSERT INTO blog_post (title, content, author_id, created_at, tzone)"\
+                "VALUES (%s,%s,%s,%s,%s);"
+
+                cursor.execute(sSQL, (title, content, author.id, created_at, tzone))
+                CONNECTION.commit()
+                cursor.close()
+
+                messages.success(request, 'Se ha creado exitosamente!')
+                return redirect('posteos')
+            except psycopg2.Error as error:
+                print("Error al crear un posteo", error)
+    return render(request, 'blog/crear_posteo.html', {"form": form})
 
 
-class PostListView(ListView):
+class LoginRequiredMixin:
+    """
+    Verifica si el usuario esta autenticado
+    """
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        print(request.user.is_authenticated)
+        return super().dispatch(request,*args,**kwargs)
+
+
+class PostListView(LoginRequiredMixin, ListView):
     model = Post
     template_name = 'blog/posteos.html'
     context_object_name = 'context'
@@ -93,18 +145,18 @@ class PostListView(ListView):
         
         return queryset
 
-class PostCreateView(CreateView):
-    model = Post
-    form_class = PostForm
-    template_name = 'blog/crear_posteo.html'
-    success_url = reverse_lazy('posteos')
+# class PostCreateView(LoginRequiredMixin, CreateView):
+#     model = Post
+#     form_class = PostForm
+#     template_name = 'blog/crear_posteo.html'
+#     success_url = reverse_lazy('posteos')
 
-class PostUpdateView(UpdateView):
+class PostUpdateView(LoginRequiredMixin, UpdateView):
     model = Post
     form_class = PostForm
     template_name = 'blog/modificar_posteo.html'
     success_url = reverse_lazy('posteos')
 
-class PostDeleteView(DeleteView):
+class PostDeleteView(LoginRequiredMixin, DeleteView):
     model = Post
     success_url = reverse_lazy('posteos')
