@@ -15,5 +15,22 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Creacion del Post')
     tzone = models.CharField(choices=TZ, verbose_name='Zona Horaria', max_length=10)
 
+    class Meta:
+        verbose_name = "Posteo"
+    
     def __str__(self):
         return self.title + ' - ' + str(self.created_at)
+
+
+class Comment(models.Model):
+    title = models.CharField(max_length=100, verbose_name='Titutlo del Comentario', null=True)
+    post = models.ForeignKey('Post', related_name="post", on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha del comentario")
+
+    class Meta:
+        verbose_name = "Comentario"
+        verbose_name_plural = "Comentarios"
+    
+    def __str__(self):
+        return self.title
+    
